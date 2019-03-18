@@ -47,7 +47,7 @@ def fillPixels(im, N=1):
                         im[i,j] = avg
     return im
 
-def returnGlobaTEC(date='', datafolder='', timelim=[]):
+def returnGlobalTEC(date='', datafolder='', timelim=[]):
     if isinstance(date,str):
         try:
             yy = date[2:4]
@@ -61,7 +61,7 @@ def returnGlobaTEC(date='', datafolder='', timelim=[]):
     
     # Open the data
     try:
-        fnstruct = 'gps'+yy+mm+dd+'g.002.hdf5'
+        fnstruct = 'gps'+yy+mm+dd+'g.001.hdf5'
         fn = datafolder + fnstruct
         f = h5py.File(fn, 'r')
         obstimes = f['Data/Table Layout']['ut1_unix']
@@ -142,7 +142,6 @@ def save2HDF(t,lon,lat,images,h5fn):
         if 'f' in locals():
             f.close()
         raise(e)
-        
 
 def plotTECmap(x,y,z,title='',cmap='viridis',clim=[0,15],
                figsize=(10,6),latlim=[0,70],lonlim=[-150,-60],
@@ -157,6 +156,7 @@ def plotTECmap(x,y,z,title='',cmap='viridis',clim=[0,15],
                       parallels=parallels,meridians=meridians,title=title,
                       background_color=background_color,grid_color=grid_color,
                       grid_linewidth=1,border_color=border_color,figure=True)
+    
     plt.pcolormesh(x,y,z.T, cmap=cmap, transform=ccrs.PlateCarree())
     plt.clim(clim)
     if colorbar:
