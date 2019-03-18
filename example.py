@@ -1,53 +1,42 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun May 20 20:56:20 2018
+Created on Sun Mar 10 15:32:25 2019
 
 @author: smrak
 """
-from numpy import ma, isnan
+from glob import glob
+from gpstec import gpstec
 from datetime import datetime
-from scipy import ndimage
-from gpstec import returnGlobalTEC
-#force = True
-#saveh5 = True
-date = '2010-10-18'
-folder = 'C:\\Users\\smrak\\Google Drive\\BU\\Projects\\steve\\data\\gps\\'
-folder = '/home/smrak/Documents/precipitation/data/'
-hdffn = folder + 'struct_' + date.replace('-','')[2:] + '.h5'
-timelim = [datetime(2008,3,26,6,0,0), datetime(2008,3,26,12,0,0)]
 
-#
-t,xgrid,ygrid,im = returnGlobalTEC(date=date,datafolder=folder)
-t,xgrid,ygrid,im = gtec.readFromHDF(hdffn)
-gtec.save2HDF(t=t,lon=xgrid,lat=ygrid,images=im,h5fn=hdffn)
-#else:
-#    
-#    if saveh5:
-#        gtec.save2HDF(t=t,lon=xgrid,lat=ygrid,images=im,h5fn=hdffn)
+import numpy as np
 
-t,xgrid,ygrid,im = gtec.returnGlobaTEC(date=date,datafolder=folder,timelim=timelim)
-gtec.save2HDF(t=t,lon=xgrid,lat=ygrid,images=im,h5fn=hdffn)
+mode = ['lin', 'log']
+year = 2017
+month = 9
+day = 11
+tlim = [datetime(year,month,day,0,0,0), datetime(year,month,day+1,0,0,0)]
+d = str(day) if len(str(day)) == 2 else '0' + str(day)
+m = str(month) if len(str(month)) == 2 else '0' + str(month)
+ddir = d + tlim[0].strftime("%B")[:3].lower() + str(year)[2:]
+folder = 'C:\\Users\\smrak\\Documents\\LWSI\\' + ddir + '\\'
+fn = glob(folder + 'gps*{}{}{}g.*.hdf5'.format(str(year)[2:], m, d))[0]
 
-######## MAP #########
-projection='lambert'
-figsize=(10,6)
-latlim = [58,70]
-lonlim= [-165,-135]
-meridians = [-200,-180,-160,-140,-120,-100,-80,-60,-40,-20,0]
-parallels = [40,55,60,65,70,75,80]
+D = gpstec.returnGlobaTEC(datafolder=fn, timelim=tlim)
 
-# Plot
-savefolder = '/home/smrak/Documents/steve/plots/gps/'
-for i in range(t.shape[0]):
-    z = im[i]
-#    z = gtec.fillPixels(z,1)
-    z = ndimage.median_filter(z, 3)
-    image = ma.masked_where(isnan(z),z)
-    title = 'GPSTEC: {} UT'.format(t[i])
-    savefn = savefolder +'gpsmap_median_zoom_' + datetime.strftime(t[i],'%H%M%S') + '.png'
-    fig = gtec.plotTECmap(xgrid,ygrid,z,title=title,clim=[4,8],
-                          figsize=figsize,projection=projection,
-                          lonlim=lonlim,latlim=latlim,
-                          meridians=meridians,parallels=parallels,
-                          tight=False,savefn=savefn,DPI=200)
-#    break
+c = 0
+
+for mode in mode:
+    clim = [0,40] if mode == 'lin' else [0,1.5]
+    for i in range(D['time'].shape[0]):
+        figname = folder + '\\' + mode +'\\' + D['time'][i].strftime('%m%d_%H%M')
+        z = np.log10(D['tecim'][i]) if mode == 'log' else D['tecim'][i]
+        fig = gpstec.plotTECmap(D['xgrid'], D['ygrid'], z, 
+                                latlim=[10,70],title = D['time'][i],
+                                clim = clim, projection='lambert',cmap='jet',
+                                savefn=figname)
+    #    break
+    if c == 0:
+        fns = str(tlim[0].day) + str(tlim[0].hour) + '-' + str(tlim[1].day) + str(tlim[1].hour)
+        gpstec.save2HDF(D['time'], D['xgrid'], D['ygrid'], D['tecim'], folder + fns + 'ut.h5')
+    c += 1
+

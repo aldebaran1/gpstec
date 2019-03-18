@@ -10,6 +10,7 @@ import h5py
 from numpy import where, isin, nan, arange, ones, isnan, isfinite, array, mean, unique
 from datetime import datetime 
 from pyGnss import gnssUtils as gu
+import os
 
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -47,8 +48,13 @@ def fillPixels(im, N=1):
                         im[i,j] = avg
     return im
 
+<<<<<<< HEAD
 def returnGlobalTEC(date='', datafolder='', timelim=[]):
     if isinstance(date,str):
+=======
+def returnGlobaTEC(date='', datafolder='', timelim=[]):
+    if isinstance(date,str) and date != '':
+>>>>>>> 4799dddcfa21d1048bab15ab40260e83d8a0a8ef
         try:
             yy = date[2:4]
             mm = date[5:7]
@@ -61,8 +67,18 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
     
     # Open the data
     try:
+<<<<<<< HEAD
         fnstruct = 'gps'+yy+mm+dd+'g.001.hdf5'
         fn = datafolder + fnstruct
+=======
+        if os.path.isdir(datafolder):
+            fnstruct = 'gps'+yy+mm+dd+'g.002.hdf5'
+            fn = datafolder + fnstruct
+        elif os.path.isfile(datafolder):
+            fn = datafolder
+        else:
+            raise('Something went wrong. datafolder format is not recognized')
+>>>>>>> 4799dddcfa21d1048bab15ab40260e83d8a0a8ef
         f = h5py.File(fn, 'r')
         obstimes = f['Data/Table Layout']['ut1_unix']
         xgrid = arange(-180,180)
@@ -75,18 +91,18 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
         iterate = obstimes
     elif len(timelim) > 0 and isinstance(timelim[0],datetime):
         tlim = gu.datetime2posix(timelim)
-        IDT = where( (obstimes>=tlim[0]) & (obstimes<=tlim[1]) )[0]
+        IDT = (obstimes>=tlim[0]) & (obstimes<=tlim[1])
         iterate = unique(obstimes[IDT])
     else:
         raise('timelim argument has to be a dateime.datetime object, with \
               with a length 2 (start,stop)')
         
     # Make an empty array to read in the data
-    imstack = nan*ones((iterate.shape[0],xgrid.shape[0],ygrid.shape[0]))
+    imstack = nan * ones((iterate.shape[0],xgrid.shape[0],ygrid.shape[0]))
     
     for i,t in enumerate(iterate):
         print ('Reading in image {}/{}'.format(i+1, iterate.shape[0]))
-        im = nan*ones((xgrid.shape[0],ygrid.shape[0]))
+        im = nan * ones((xgrid.shape[0],ygrid.shape[0]))
         data_t = f['Data/Table Layout']['ut2_unix']
         idt = abs(data_t - t).argmin()
         idT = isin(data_t,data_t[idt])
@@ -102,7 +118,8 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
         imstack[i,:,:] = im
     dt = array([datetime.utcfromtimestamp(t) for t in iterate])
     
-    return dt, xgrid, ygrid, imstack
+    out = {'time':dt, 'xgrid': xgrid, 'ygrid': ygrid, 'tecim': imstack}
+    return out
 
 def readFromHDF(h5fn, tformat='datetime'):
     try:
