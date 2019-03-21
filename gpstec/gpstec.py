@@ -48,13 +48,8 @@ def fillPixels(im, N=1):
                         im[i,j] = avg
     return im
 
-<<<<<<< HEAD
 def returnGlobalTEC(date='', datafolder='', timelim=[]):
-    if isinstance(date,str):
-=======
-def returnGlobaTEC(date='', datafolder='', timelim=[]):
     if isinstance(date,str) and date != '':
->>>>>>> 4799dddcfa21d1048bab15ab40260e83d8a0a8ef
         try:
             yy = date[2:4]
             mm = date[5:7]
@@ -67,10 +62,6 @@ def returnGlobaTEC(date='', datafolder='', timelim=[]):
     
     # Open the data
     try:
-<<<<<<< HEAD
-        fnstruct = 'gps'+yy+mm+dd+'g.001.hdf5'
-        fn = datafolder + fnstruct
-=======
         if os.path.isdir(datafolder):
             fnstruct = 'gps'+yy+mm+dd+'g.002.hdf5'
             fn = datafolder + fnstruct
@@ -78,7 +69,7 @@ def returnGlobaTEC(date='', datafolder='', timelim=[]):
             fn = datafolder
         else:
             raise('Something went wrong. datafolder format is not recognized')
->>>>>>> 4799dddcfa21d1048bab15ab40260e83d8a0a8ef
+            
         f = h5py.File(fn, 'r')
         obstimes = f['Data/Table Layout']['ut1_unix']
         xgrid = arange(-180,180)
@@ -133,7 +124,7 @@ def readFromHDF(h5fn, tformat='datetime'):
         # Close file
         f.close()
         
-        return t, lon, lat, images
+        return {'time': t, 'xgrid': lon, 'ygrid': lat, 'tecim': images}
     except Exception as e:
         if 'f' in locals():
             f.close()
@@ -151,7 +142,7 @@ def save2HDF(t,lon,lat,images,h5fn):
         h5time.attrs[u'time format'] = 'time format in POSIX time'
         d.create_dataset('lon', data=lon)
         d.create_dataset('lat', data=lat)
-        h5img = d.create_dataset('im', data=images, compression=9)
+        h5img = d.create_dataset('im', data=images, compression='gzip', compression_opts=9)
         h5img.chunks
         # Close file
         f.close()
@@ -167,12 +158,14 @@ def plotTECmap(x,y,z,title='',cmap='viridis',clim=[0,15],
                meridians = [-180,-150,-120,-90,-60,-40,-20],
                parallels = [0,20,30,40,50,60,70,80],
                colorbar=True,cbar_label='TEC [TECu]',
-               tight=False, savefn=False,DPI=100):
+               tight=False, savefn=False,DPI=100,
+               nightshade=False, ns_dt=None, ns_alpha=0.1):
     # Make map
     fig = gm.plotCartoMap(figsize=figsize,projection=projection,latlim=latlim,lonlim=lonlim,
                       parallels=parallels,meridians=meridians,title=title,
                       background_color=background_color,grid_color=grid_color,
-                      grid_linewidth=1,border_color=border_color,figure=True)
+                      grid_linewidth=1,border_color=border_color,figure=True,
+                      nightshade=nightshade, ns_dt=ns_dt, ns_alpha=ns_alpha)
     
     plt.pcolormesh(x,y,z.T, cmap=cmap, transform=ccrs.PlateCarree())
     plt.clim(clim)
@@ -188,5 +181,6 @@ def plotTECmap(x,y,z,title='',cmap='viridis',clim=[0,15],
             plt.close(fig)
         except Exception as e:
             raise(e)
-            plt.show()
+    else:
+        plt.show()
     return fig

@@ -10,9 +10,6 @@ import numpy as np
 import madrigalWeb.madrigalWeb
 import subprocess
 from dateutil import parser
-#savedir = '/media/smrak/gnss/gpstec/'
-#t0 = '2017-09-05'
-#t1 = '2017-09-10'
 
 def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
              user_fullname:str = None,
