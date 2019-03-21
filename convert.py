@@ -14,11 +14,8 @@ from dateutil import parser
 import subprocess
 from argparse import ArgumentParser
 
-#root = '/media/smrak/gnss/gpstec/2017/gps/28may17/aa.h5'
-#ofn = None
-#date = '2017-5-28'
-#datedt = parser.parse(date)
 months = {'jan': 1, 'feb': 2, 'mar':3, 'apr':4, 'may':5, 'jun':6, 'jul':7, 'aug':8, 'sep':9, 'oct':10, 'nov':11, 'dec':12}
+
 def convert(root:str = None, 
             date:str = None,
             tlim:str = None,
@@ -66,7 +63,7 @@ def convert(root:str = None,
     if ofn is None:
         ofn = folder
     if os.path.isdir(ofn):
-        ofn += 'conv_' + tlim[0].strftime('%m%dT%H%M') + '-' + tlim[1].strftime('%m%dT%H%M') + '.h5'
+        ofn = os.path.join(ofn, 'conv_' + tlim[0].strftime('%m%dT%H%M') + '-' + tlim[1].strftime('%m%dT%H%M') + '.h5')
 
     if os.path.isfile(ofn):
         if not os.path.splitext(ofn)[1] in ['.h5', '.hdf5']:
@@ -89,6 +86,7 @@ def convert(root:str = None,
         D = gpstec.returnGlobalTEC(datafolder=fn, timelim=tlim)
         print ('Saving data to ... {}'.format(ofn))
         gpstec.save2HDF(D['time'], D['xgrid'], D['ygrid'], D['tecim'], ofn)
+
 if __name__ == '__main__':
     
     p = ArgumentParser()

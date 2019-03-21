@@ -6,11 +6,11 @@ nightshade: False,
 latlim: [15, 55],
 lonlim: [-130, -60],
 parallels: [0, 70, 10],
-meridians: [-160,-10, 20]
+meridians: [-160,-10, 20],
 
 colorbar: 1,
-DPI: 100
+DPI: 100,
 
-mode: lin,
-clim: None
+mode: log,
+clim: ,
 }
