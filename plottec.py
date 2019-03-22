@@ -95,7 +95,7 @@ def plot(fnhdf:str = None,
                 
                 axp = fig.gca()
                 posn = ax.get_position()
-                axp.set_position([posn.x0 + posn.width + 0.04, posn.y0,
+                axp.set_position([posn.x0 + posn.width + 0.01, posn.y0,
                               0.02, posn.height])
                 fig.canvas.draw()
             if show:

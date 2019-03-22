@@ -1,5 +1,5 @@
 {
-projection: stereo,
+projection: lambert,
 cmap: jet,
 nightshade: False,
 
@@ -11,6 +11,6 @@ meridians: [-160,-10, 20],
 colorbar: 1,
 DPI: 100,
 
-mode: log,
+mode: lin,
 clim: ,
 }
