@@ -53,8 +53,8 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
     T0 = parser.parse(t0)
     T1 = parser.parse(t1)
     expList = MD.getExperiments(8000, 
-                                T0.year, T0.month, T0.day, 0, 0, 0,
-                                T1.year, T1.month, T1.day, 0, 0, 0)
+                                T0.year, T0.month, T0.day, 0, 0, 1,
+                                T1.year, T1.month, T1.day, 23, 59, 59)
     #for exp in expList:
     #    # should be only one
     #    print((str(exp) + '\n'))

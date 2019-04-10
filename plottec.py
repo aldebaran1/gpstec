@@ -6,7 +6,7 @@ Created on Sun Mar 10 15:32:25 2019
 """
 from glob import glob
 from gpstec import gpstec
-from datetime import datetime
+#from datetime import datetime
 import numpy as np
 import os
 import yaml
@@ -16,7 +16,7 @@ import cartopy.crs as ccrs
 from cartomap import geogmap as gm
 from argparse import ArgumentParser
 
-mcfg = '/home/smrak/Documents/cartomap/map/conus.yaml'
+#mcfg = '/home/smrak/Documents/cartomap/map/conus.yaml'
 
 def _round(x, base=5):
     r = base * round(x/base)
@@ -29,17 +29,23 @@ def _round(x, base=5):
 def plot(fnhdf:str = None,
          show:bool = False,
          odir:str = None,
-         cfg:str = None):
-
-    assert fnhdf is not None and os.path.splitext(fnhdf)[1] in ['.h5', '.hdf5']
+         cfg:str = None,
+         clim:list = None,
+         mode:str = None):
+    C0 = clim
+    fnhdf = os.path.expanduser(fnhdf.strip())
+    assert fnhdf is not None 
+    assert os.path.splitext(fnhdf)[1] in ['.h5', '.hdf5']
     # Converted file
     D = gpstec.readFromHDF(fnhdf)
     if cfg is None:
         folder = os.path.expanduser(os.path.join(os.getcwd(), 'map'))
+        
         mcfg = sorted(glob(os.path.join(folder, '*.yaml')))[0]
     else:
         assert os.path.splitext(cfg)[1] in ['.yaml', 'yml']
         mcfg = cfg
+    
     # Map
     mst = yaml.load(open(mcfg, 'r'))
     projection = mst.get('projection')
@@ -51,25 +57,31 @@ def plot(fnhdf:str = None,
     meridilim = mst.get('meridians')
     parallels = np.arange(paralim[0], paralim[1], paralim[2])
     meridians = np.arange(meridilim[0], meridilim[1], meridilim[2])
-    
-    mode = mst.get('mode') if mst.get('mode') is not None else 'lin'
+    if mode is None:
+        mode = mst.get('mode') if mst.get('mode') is not None else 'lin'
     if isinstance(mode, str):
         mode = [mode]
     colorbar = mst.get('colorbar')
     cbar_label = mst.get('cbar_label') if mst.get('cbar_label') is not None else 'TEC [TECu]'
-    clim = mst.get('clim')
+    if clim is None:
+        clim = mst.get('clim')
+    
     if clim is None:
         vmax = 3 * _round(np.nanmedian(D['tecim']), base=5)
         vmin = 0
         clim = [vmin, vmax]
-    
+    else:
+        vmax = float(clim[1])
+        vmin = float(clim[0])
+        clim = [vmin, vmax]
+        
     figsize = mst.get('figsize') if mst.get('figsize') is not None else [12,8]
     background_color = mst.get('background_color') if mst.get('background_color') is not None else 'grey'
     grid_color = mst.get('grid_color') if mst.get('grid_color') is not None else 'white'
     grid_linewidth = mst.get('grid_linewidth') if mst.get('grid_linewidth') is not None else 1
     grid_linestyle = mst.get('grid_linestyle') if mst.get('grid_linestyle') is not None else '--'
     
-    dpi = mst.get('dpi') if mst.get('dpi') is not None else 100
+    dpi = mst.get('dpi') if mst.get('dpi') is not None else 50
 
     # Plot
     for mode in mode:
@@ -101,7 +113,14 @@ def plot(fnhdf:str = None,
             if show:
                 plt.show()
             else:
-                figdir = os.path.expanduser(os.path.join(odir,mode))
+                if odir is None:
+                    odir = os.path.split(fnhdf)[0]
+                assert os.path.isdir(odir)
+                if C0 is not None:
+                    svdir = mode + str(int(clim[0])) + '-' + str(int(clim[1]))
+                else:
+                    svdir = mode
+                figdir = os.path.expanduser(os.path.join(odir, svdir))
                 if not os.path.exists(figdir):
                     print ('Creating a new directory: ', figdir)
                     subprocess.call('mkdir -p {}'.format(figdir), shell=True, timeout=5)
@@ -118,6 +137,8 @@ if __name__ == '__main__':
     p.add_argument('-c', '--cfg', type = str, help='path to donfig.yaml file for map configuration. Default = ~/map/conus.yaml')
     p.add_argument('-o', '--odir', help = 'Destination folder, if None-> the same as input folder', default = None)
     p.add_argument('--show', help = 'set time limints for the file to cenvert', action='store_true')
+    p.add_argument('--clim', nargs=2, default=None)
+    p.add_argument('--mode', type=str, default=None)
     P = p.parse_args()
-    
-    plot(fnhdf = P.fn, cfg = P.cfg, odir = P.odir, show = P.show)
+
+    plot(fnhdf = P.fn, cfg = P.cfg, odir = P.odir, show = P.show, clim=P.clim, mode=P.mode)

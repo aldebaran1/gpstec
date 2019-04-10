@@ -19,7 +19,8 @@ months = {'jan': 1, 'feb': 2, 'mar':3, 'apr':4, 'may':5, 'jun':6, 'jul':7, 'aug'
 def convert(root:str = None, 
             date:str = None,
             tlim:str = None,
-            ofn:str = None):
+            ofn:str = None,
+            force:bool = False):
     
     if date is not None:
         datedt = parser.parse(date)
@@ -32,11 +33,19 @@ def convert(root:str = None,
             month = str(months[part[2:5]])
             dlist = [part[:2], str(month), part[-2:]]
             datedt = datetime.strptime('-'.join(dlist), '%d-%m-%y')
+            dateday = datedt.strftime('%j')
+#            print (datedt.strftime('%j'))
         except Exception as e:
                 raise (e)
     if tlim is None:
-        tlim = [datetime(datedt.year, datedt.month, datedt.day, 0, 0, 0), 
-                datetime(datedt.year, datedt.month, datedt.day  + 1, 0, 0, 0)]
+        if (int(dateday) + 1) > 365:
+            year1 = int(datedt.year) + 1
+            day1 = 1
+        else:
+            year1 = int(datedt.year)
+            day1 = int(dateday) + 1
+        tlim = [datetime.strptime("{} {}".format(str(datedt.year), str(dateday)), "%Y %j"), 
+                datetime.strptime("{} {}".format(str(year1), str(day1)), "%Y %j")]
     else:
         tlim = parser.parse(tlim)
     if os.path.splitext(root[1]) in ['.h5', '.hdf5']:
@@ -72,15 +81,16 @@ def convert(root:str = None,
     if not os.path.exists(folder):
         subprocess.call('mkdir -p {}'.format(folder+'/'), shell=True, timeout=5)
     
-    if os.path.exists(ofn):
-        answer = str(input("{} already exists. Do you want to override it? Y/n".format(ofn)))
-        if answer in ['y', 'Y']:
-            print ('Loading and rearranging data ...')
-            D = gpstec.returnGlobalTEC(datafolder=fn, timelim=tlim)
-            print ('Saving data to ... {}'.format(ofn))
-            gpstec.save2HDF(D['time'], D['xgrid'], D['ygrid'], D['tecim'], ofn)
-        else:
-            pass
+    if os.path.exists(ofn) and not force:
+        print ('File already exist')
+#        answer = str(input("{} already exists. Do you want to override it? Y/n".format(ofn)))
+#        if answer in ['y', 'Y']:
+#            print ('Loading and rearranging data ...')
+#            D = gpstec.returnGlobalTEC(datafolder=fn, timelim=tlim)
+#            print ('Saving data to ... {}'.format(ofn))
+#            gpstec.save2HDF(D['time'], D['xgrid'], D['ygrid'], D['tecim'], ofn)
+#        else:
+#            pass
     else:
         print ('Loading and rearranging data ...')
         D = gpstec.returnGlobalTEC(datafolder=fn, timelim=tlim)
@@ -95,6 +105,7 @@ if __name__ == '__main__':
     p.add_argument('-d', '--date', type = str, help='date in YYYY-mm-dd format')
     p.add_argument('-o', '--ofn', help = 'Destination folder, if None-> the same as input folder', default = None)
     p.add_argument('--tlim', help = 'set time limints for the file to cenvert', nargs = 2)
+    p.add_argument('--force', help='Do you want to override existing files?', action='store_true')
     P = p.parse_args()
     
-    convert(root = P.folder, date = P.date, tlim = P.tlim, ofn = P.ofn)
+    convert(root = P.folder, date = P.date, tlim = P.tlim, ofn = P.ofn, force=P.force)
