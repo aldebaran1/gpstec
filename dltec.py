@@ -77,6 +77,7 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
                         savefnlist.append(savefn)
                     else:
                         savefn = savedir + os.path.split(path)[1]
+                        savefnlist.append(savefn)
                     fnlist.append(this_file.name)
     
     # Check for direcotories:

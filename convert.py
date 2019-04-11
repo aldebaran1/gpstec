@@ -24,6 +24,7 @@ def convert(root:str = None,
     
     if date is not None:
         datedt = parser.parse(date)
+        dateday = datedt.strftime('%j')
     else:
         try:
             path = os.path.expanduser(root)
@@ -62,8 +63,11 @@ def convert(root:str = None,
                 m = str(datedt.month) if len(str(datedt.month)) == 2 else '0' + str(datedt.month)
                 ddir = d + tlim[0].strftime("%B")[:3].lower() + str(datedt.year)[2:]
                 folder = os.path.join(root, ddir)
+                print (folder)
                 pattern = 'gps*{}{}{}g.*.hdf5'.format(str(datedt.year)[2:], m, d)
+                print (sorted(glob(os.path.join(folder, pattern))))
                 fn = sorted(glob(os.path.join(folder, pattern)))[0]
+                
             except Exception as e:
                 raise (e)
         
@@ -83,14 +87,6 @@ def convert(root:str = None,
     
     if os.path.exists(ofn) and not force:
         print ('File already exist')
-#        answer = str(input("{} already exists. Do you want to override it? Y/n".format(ofn)))
-#        if answer in ['y', 'Y']:
-#            print ('Loading and rearranging data ...')
-#            D = gpstec.returnGlobalTEC(datafolder=fn, timelim=tlim)
-#            print ('Saving data to ... {}'.format(ofn))
-#            gpstec.save2HDF(D['time'], D['xgrid'], D['ygrid'], D['tecim'], ofn)
-#        else:
-#            pass
     else:
         print ('Loading and rearranging data ...')
         D = gpstec.returnGlobalTEC(datafolder=fn, timelim=tlim)

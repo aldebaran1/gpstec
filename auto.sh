@@ -22,5 +22,7 @@ ODIR2=$ODIR$year'/gps/'$dBy_l'/'
 filename='conv_'$d1'-'$d2'.h5'
 
 python dltec.py $D $D $ODIR
+sleep 1
 python convert.py $ODIR2
+sleep 1
 python plottec.py $ODIR2$filename $FLAG
