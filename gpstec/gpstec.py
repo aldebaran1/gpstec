@@ -7,7 +7,7 @@ Created on Thu Mar 29 18:20:38 2018
 """
 
 import h5py
-from numpy import where, isin, nan, arange, ones, isnan, isfinite, array, mean, unique
+from numpy import where, isin, nan, arange, ones, isnan, isfinite, array, mean, unique, hstack, vstack
 from datetime import datetime 
 from pyGnss import gnssUtils as gu
 import os
@@ -129,6 +129,22 @@ def readFromHDF(h5fn, tformat='datetime'):
         if 'f' in locals():
             f.close()
         raise(e)
+        
+def merge_time(input_fn_list=[]):
+    i = 0
+    for fn in input_fn_list:
+        try:
+            D = readFromHDF(fn)
+            if i == 0:
+                i += 1
+                time = D['time']
+                im = D['tecim']
+            else:
+                time = hstack((time, D['time']))
+                im = vstack((im, D['tecim']))
+        except:
+            print ('{} doesnt exist'.format(fn))
+    return {'time': time, 'xgrid': D['xgrid'], 'ygrid': D['ygrid'], 'tecim': im}
     
 
 def save2HDF(t,lon,lat,images,h5fn):
