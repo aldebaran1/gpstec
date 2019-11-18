@@ -27,14 +27,20 @@ def convert(root:str = None,
         dateday = datedt.strftime('%j')
     else:
         try:
-            path = os.path.expanduser(root)
-            parts = path.split(os.sep)
-            assert len(parts[-2]) == 7
-            part = parts[-2]
-            month = str(months[part[2:5]])
-            dlist = [part[:2], str(month), part[-2:]]
-            datedt = datetime.strptime('-'.join(dlist), '%d-%m-%y')
+#            path = os.path.expanduser(root)
+#            parts = path.split(os.sep)
+            fname = os.path.split(root)[1]
+            fndate = str(fname[3:9])
+            datedt = datetime.strptime("{}".format(fndate), '%y%m%d')
             dateday = datedt.strftime('%j')
+#            print (datedt)
+#            
+#            assert len(parts[-2]) == 7
+#            part = parts[-2]
+#            month = str(months[part[2:5]])
+#            dlist = [part[:2], str(month), part[-2:]]
+#            datedt = datetime.strptime('-'.join(dlist), '%d-%m-%y')
+#            dateday = datedt.strftime('%j')
 #            print (datedt.strftime('%j'))
         except Exception as e:
                 raise (e)
@@ -49,27 +55,31 @@ def convert(root:str = None,
                 datetime.strptime("{} {}".format(str(year1), str(day1)), "%Y %j")]
     else:
         tlim = parser.parse(tlim)
-    if os.path.splitext(root[1]) in ['.h5', '.hdf5']:
+    if os.path.isfile(root) and root.endswith('.hdf5'):
         fn = root
         folder = os.path.split(fn)[0]
     else:
-        flist = sorted(glob(root + '*.hdf5'))
-        if len(flist) > 0:
-            fn = flist[0]
-            folder = os.path.split(root)[0]
+        if os.path.splitext(root[1]) in ['.h5', '.hdf5']:
+            fn = root
+            folder = os.path.split(fn)[0]
         else:
-            try:
-                d = str(datedt.day) if len(str(datedt.day)) == 2 else '0' + str(datedt.day)
-                m = str(datedt.month) if len(str(datedt.month)) == 2 else '0' + str(datedt.month)
-                ddir = d + tlim[0].strftime("%B")[:3].lower() + str(datedt.year)[2:]
-                folder = os.path.join(root, ddir)
-                print (folder)
-                pattern = 'gps*{}{}{}g.*.hdf5'.format(str(datedt.year)[2:], m, d)
-                print (sorted(glob(os.path.join(folder, pattern))))
-                fn = sorted(glob(os.path.join(folder, pattern)))[0]
-                
-            except Exception as e:
-                raise (e)
+            flist = sorted(glob(root + '*.hdf5'))
+            if len(flist) > 0:
+                fn = flist[0]
+                folder = os.path.split(root)[0]
+            else:
+                try:
+                    d = str(datedt.day) if len(str(datedt.day)) == 2 else '0' + str(datedt.day)
+                    m = str(datedt.month) if len(str(datedt.month)) == 2 else '0' + str(datedt.month)
+                    ddir = d + tlim[0].strftime("%B")[:3].lower() + str(datedt.year)[2:]
+                    folder = os.path.join(root, ddir)
+                    print (folder)
+                    pattern = 'gps*{}{}{}g.*.hdf5'.format(str(datedt.year)[2:], m, d)
+                    print (sorted(glob(os.path.join(folder, pattern))))
+                    fn = sorted(glob(os.path.join(folder, pattern)))[0]
+                    
+                except Exception as e:
+                    raise (e)
         
         
 
@@ -83,7 +93,8 @@ def convert(root:str = None,
             ofn = os.path.splitext(ofn)[0] + '.h5'
     
     if not os.path.exists(folder):
-        subprocess.call('mkdir -p {}'.format(folder+'/'), shell=True, timeout=5)
+        
+        subprocess.call('mkdir "{}"'.format(folder), shell=True, timeout=5)
     
     if os.path.exists(ofn) and not force:
         print ('File already exist')
