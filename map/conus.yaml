@@ -1,15 +1,19 @@
 {
-projection: lambert,
+figsize: [12,8],
+projection: stereo,
 cmap: jet,
 nightshade: False,
 
-latlim: [15, 55],
-lonlim: [-130, -60],
-parallels: [0, 70, 10],
-meridians: [-160,-10, 20],
+latlim: [-55, 65],
+lonlim: [-150, -40],
+#parallels: [-70, 70, 10],
+#meridians: [-180, 0, 20],
+
+mlat: [-80, 80, 20],
+mlt: [0, 24, 4],
 
 colorbar: 1,
-DPI: 100,
+DPI: 200,
 
 mode: lin,
 clim: ,

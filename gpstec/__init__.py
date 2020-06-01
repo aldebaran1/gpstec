@@ -6,4 +6,4 @@ Created on Thu Oct  4 11:43:49 2018
 @author: smrak
 """
 
-from .gpstec import returnGlobalTEC, readFromHDF, save2HDF, plotTECmap, merge_time # noqa: F401
+from .gpstec import returnGlobalTEC, readFromHDF, save2HDF, plotTECmap, merge_time, interpolateTEC # noqa: F401

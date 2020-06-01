@@ -8,7 +8,7 @@ from glob import glob
 from gpstec import gpstec
 #from datetime import datetime
 import numpy as np
-import os
+import os, platform
 import yaml
 import subprocess
 import matplotlib.pyplot as plt
@@ -27,11 +27,10 @@ def _round(x, base=5):
     return 
 
 def plot(fnhdf:str = None,
-         show:bool = False,
          odir:str = None,
          cfg:str = None,
-         clim:list = None,
-         mode:str = None):
+         clim:list = None, mode:str = None, average:int=None, cmap=None,
+         projection=None, lonlim=None, latlim=None, terminator=None):
     C0 = clim
     fnhdf = os.path.expanduser(fnhdf.strip())
     assert fnhdf is not None 
@@ -48,19 +47,44 @@ def plot(fnhdf:str = None,
     
     # Map
     mst = yaml.load(open(mcfg, 'r'))
-    projection = mst.get('projection')
-    cmap = mst.get('cmap')
-    nightshade = mst.get('nightshade')
-    latlim = mst.get('latlim')
-    lonlim = mst.get('lonlim')
-    paralim = mst.get('parallels')
-    meridilim = mst.get('meridians')
-    parallels = np.arange(paralim[0], paralim[1], paralim[2])
-    meridians = np.arange(meridilim[0], meridilim[1], meridilim[2])
+    if projection is None:
+        projection = mst.get('projection')
+    if cmap is None:
+        cmap = mst.get('cmap')
+    if lonlim is None:
+        lonlim = mst.get('lonlim')
+    if latlim is None:
+        latlim = mst.get('latlim')
+    try:
+        nightshade = mst.get('nightshade')
+    except:
+        pass
+    try:
+        paralim = mst.get('parallels')
+        meridilim = mst.get('meridians')
+        parallels = np.arange(paralim[0], paralim[1], paralim[2])
+        meridians = np.arange(meridilim[0], meridilim[1], meridilim[2])
+    except:
+        parallels = []
+        meridians = []
+    
+    try:
+        apex = True
+        mlatlim = mst.get('mlat')
+        mltlim = mst.get('mlt')
+        mlat_levels = np.arange(mlatlim[0], mlatlim[1]+.1, mlatlim[2])
+        mlon_levels = np.arange(mltlim[0], mltlim[1]+.1, mltlim[2])
+    except:
+        apex = False
+        mlat_levels = None
+        mlon_levels = None
+    
+    
     if mode is None:
-        mode = mst.get('mode') if mst.get('mode') is not None else 'lin'
+        mode = 'lin'
     if isinstance(mode, str):
         mode = [mode]
+        
     colorbar = mst.get('colorbar')
     cbar_label = mst.get('cbar_label') if mst.get('cbar_label') is not None else 'TEC [TECu]'
     if clim is None:
@@ -81,53 +105,53 @@ def plot(fnhdf:str = None,
     grid_linewidth = mst.get('grid_linewidth') if mst.get('grid_linewidth') is not None else 1
     grid_linestyle = mst.get('grid_linestyle') if mst.get('grid_linestyle') is not None else '--'
     
-    dpi = mst.get('dpi') if mst.get('dpi') is not None else 50
+    dpi = int(mst.get('DPI')) if mst.get('DPI') is not None else 50
 
     # Plot
     for mode in mode:
         if mode == 'log': clim[1] = np.log10(vmax)
         else: clim[1] = vmax
-        for i in range(D['time'].shape[0]):
-            z = np.log10(D['tecim'][i]) if mode == 'log' else D['tecim'][i]
-            fig, ax = gm.plotCartoMap(figsize=figsize, projection=projection,
-                                  title=D['time'][i],
-                                  latlim=latlim,lonlim=lonlim,
-                                  meridians=meridians, parallels=parallels,
-                                  background_color=background_color, 
-                                  grid_color=grid_color,grid_linewidth=grid_linewidth,
-                                  grid_linestyle=grid_linestyle,
-                                  figure=True, 
-                                  nightshade=nightshade, ns_dt=D['time'][i])
-            im = plt.pcolormesh(D['xgrid'],D['ygrid'], z.T, cmap=cmap, transform=ccrs.PlateCarree())
+        iterate = np.arange(0, D['time'].size, average)
+        for i in iterate: #range(D['time'].shape[0]):
+            t0 = D['time'][i]
+            z = np.log10(np.nanmean(D['tecim'][i:i+average], axis=0)) if mode == 'log' else np.nanmean(D['tecim'][i:i+average], axis=0)
+            fig, ax = gm.plotCartoMap(latlim=latlim, lonlim=lonlim, 
+                                  projection='merc', #lon0 = -90,#glons[idmidnight],
+                                  title = t0, 
+                                  #lat0 = 40,
+                                  meridians=None, parallels=None, figsize=figsize,
+                                  background_color='gray', border_color='k', states=0,
+                                  apex=True,mlat_labels=0,mlon_labels=0,
+                                  mlat_levels=mlat_levels,
+                                  mlon_levels=mlon_levels,
+                                  date=t0, 
+                                  mlon_colors='w', mlat_colors='w',mlon_cs='mlt',
+                                  terminator=True, ter_color='r', terminator_altkm=350
+                                  )
+            
+            print ("Plotting {}".format(D['time'][i]))
+            im = plt.pcolormesh(D['xgrid'], D['ygrid'], z.T, cmap=cmap, transform=ccrs.PlateCarree())
             plt.clim(clim)
             
             if colorbar:
-                cax = fig.add_axes([0, 0, 0.1, 0.1])
-                plt.colorbar(im, cax=cax, label=cbar_label)
-                
-                axp = fig.gca()
                 posn = ax.get_position()
-                axp.set_position([posn.x0 + posn.width + 0.01, posn.y0,
-                              0.02, posn.height])
-                fig.canvas.draw()
-            if show:
-                plt.show()
-            else:
-                if odir is None:
-                    odir = os.path.split(fnhdf)[0]
-                assert os.path.isdir(odir)
-                if C0 is not None:
-                    svdir = mode + str(int(clim[0])) + '-' + str(int(clim[1]))
-                else:
-                    svdir = mode
-                figdir = os.path.expanduser(os.path.join(odir, svdir))
-                if not os.path.exists(figdir):
-                    print ('Creating a new directory: ', figdir)
+                cax = fig.add_axes([posn.x0+posn.width+0.01, posn.y0, 0.02, posn.height])
+                fig.colorbar(im, cax=cax, label='TEC [TECu]')
+            
+            if odir is None:
+                odir = os.path.join(os.path.split(fnhdf)[0], D['time'][i].strftime("%Y%m%d"))
+            svdir = projection + '_' + mode + '_' + str(int(clim[0])) + '-' + str(int(clim[1]))
+            figdir = os.path.expanduser(os.path.join(odir, svdir))
+            if not os.path.exists(figdir):
+                print ('Creating a new directory: ', figdir)
+                if platform.system == 'Linux':
                     subprocess.call('mkdir -p {}'.format(figdir), shell=True, timeout=5)
-                fn = D['time'][i].strftime('%m%d_%H%M')
-                figname = fn + str('.png')
-                plt.savefig(os.path.join(figdir, figname), dpi=dpi)
-                plt.close(fig=fig)
+                else:
+                    subprocess.call('mkdir "{}"'.format(figdir), shell=True, timeout=5)
+            fn = D['time'][i].strftime('%m%d_%H%M')
+            figname = fn + str('.png')
+            plt.savefig(os.path.join(figdir, figname), dpi=dpi)
+            plt.close(fig=fig)
 
 if __name__ == '__main__':
     
@@ -136,9 +160,17 @@ if __name__ == '__main__':
     p.add_argument('fn', type = str, help='converted hdf5 file')
     p.add_argument('-c', '--cfg', type = str, help='path to donfig.yaml file for map configuration. Default = ~/map/conus.yaml')
     p.add_argument('-o', '--odir', help = 'Destination folder, if None-> the same as input folder', default = None)
-    p.add_argument('--show', help = 'set time limints for the file to cenvert', action='store_true')
     p.add_argument('--clim', nargs=2, default=None)
+    p.add_argument('--projection', default=None, type=str)
+    p.add_argument('--lonlim', nargs=2, type=float)
+    p.add_argument('--latlim', nargs=2, type=float)
     p.add_argument('--mode', type=str, default=None)
+    p.add_argument('--average', type=int, default=1)
+    p.add_argument('--cmap', type=str, default='jet')
+    p.add_argument('--terminator', action='store_true')
+    
     P = p.parse_args()
 
-    plot(fnhdf = P.fn, cfg = P.cfg, odir = P.odir, show = P.show, clim=P.clim, mode=P.mode)
+    plot(fnhdf = P.fn, cfg = P.cfg, odir = P.odir, mode=P.mode,
+         clim=P.clim, cmap=P.cmap, projection=P.projection, average=P.average,
+         lonlim=P.lonlim, latlim=P.latlim, terminator=P.terminator)

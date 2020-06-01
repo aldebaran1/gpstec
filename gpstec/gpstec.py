@@ -7,11 +7,13 @@ Created on Thu Mar 29 18:20:38 2018
 """
 
 import h5py
-from numpy import where, isin, nan, arange, ones, isnan, isfinite, array, mean, unique, hstack, vstack
+from numpy import where, isin, nan, arange, ones, isnan, isfinite, ndarray
+from numpy import array, mean, unique, hstack, vstack, ma, meshgrid, linspace
 from datetime import datetime 
 from pyGnss import gnssUtils as gu
 import os
-
+from typing import Union
+from scipy import interpolate
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from cartomap import geogmap as gm
@@ -25,8 +27,8 @@ def getNeighbours(image,i,j):
         for l in arange(j-1, j+2):
             try:
                 nbg.append(image[k,l])
-            except Exception as e:
-                pass
+            except BaseException as e:
+                print (e)
     return array(nbg)
 
 def fillPixels(im, N=1):
@@ -71,7 +73,7 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
             raise('Something went wrong. datafolder format is not recognized')
             
         f = h5py.File(fn, 'r')
-        obstimes = f['Data/Table Layout']['ut1_unix']
+        obstimes = f['Data/Table Layout']['ut2_unix']
         xgrid = arange(-180,180)
         ygrid = arange(-90,90)
     except Exception as e:
@@ -114,8 +116,9 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
 
 def readFromHDF(h5fn, tformat='datetime'):
     try:
-        f = h5py.File(h5fn,'r')
-        t = f['GPSTEC/time'].value
+        f = h5py.File(h5fn, 'r')
+        key = f.keys()
+        t = f['GPSTEC/time'][:]
         if str(tformat) == 'datetime':
             t = array([datetime.utcfromtimestamp(ts) for ts in t])
         lon = f['GPSTEC/lon'].value
@@ -132,6 +135,8 @@ def readFromHDF(h5fn, tformat='datetime'):
         
 def merge_time(input_fn_list=[]):
     i = 0
+    if isinstance(input_fn_list, str):
+        input_fn_list = [input_fn_list]
     for fn in input_fn_list:
         try:
             D = readFromHDF(fn)
@@ -200,3 +205,30 @@ def plotTECmap(x,y,z,title='',cmap='viridis',clim=[0,15],
     else:
         plt.show()
     return fig
+
+def interpolateTEC(im: Union[list, ndarray] = None,
+                  x0 = None, y0 = None,
+                  xgrid = None, ygrid = None,
+                  res = 1, xl = None, yl = None,
+                  method: str = 'linear'):
+    assert im is not None, 'Invalid input argument. Has to be a list or np.ndarray with a length of at least 1'
+    if x0 is None or y0 is None:
+        x0, y0 = meshgrid(arange(im.shape[0]), arange(im.shape[1]))
+    x0 = x0.T
+    y0 = y0.T
+    mask = ma.masked_invalid(im)
+    x0 = x0[~mask.mask]
+    y0 = y0[~mask.mask]
+    X = im[~mask.mask]
+    if xgrid is None or ygrid is None:
+        if xl is None and yl is None:
+            xgrid, ygrid = meshgrid(arange(0, im.shape[0], res), 
+                                    arange(0, im.shape[1], res))
+        else:
+            xgrid, ygrid = meshgrid(linspace(0, im.shape[0], xl), 
+                                    linspace(0, im.shape[1], yl))
+    xgrid = xgrid.T
+    ygrid = ygrid.T
+    z = interpolate.griddata((x0,y0), X.ravel(), (xgrid, ygrid), 
+                        method=method, fill_value=nan)
+    return z
