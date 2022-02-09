@@ -13,7 +13,6 @@ from datetime import datetime
 from typing import Union
 from scipy import interpolate
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
 
 def datetime2posix(dtime):
     """
@@ -185,6 +184,7 @@ def plotTECmap(x,y,z,title='',cmap='viridis',clim=[0,15],
                tight=False, savefn=False,DPI=100,
                nightshade=False, ns_dt=None, ns_alpha=0.1):
     try:
+        import cartopy.crs as ccrs
         from cartomap import geogmap as gm
     except:
         raise ('Cartomap is not installed')
