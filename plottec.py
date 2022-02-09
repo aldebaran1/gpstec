@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from cartomap import geogmap as gm
 from argparse import ArgumentParser
-
+from dateutil import parser
 #mcfg = '/home/smrak/Documents/cartomap/map/conus.yaml'
 
 def _round(x, base=5):
@@ -29,9 +29,12 @@ def _round(x, base=5):
 def plot(fnhdf:str = None,
          odir:str = None,
          cfg:str = None,
-         clim:list = None, mode:str = None, average:int=None, cmap=None,
-         projection=None, lonlim=None, latlim=None, terminator=None):
-    C0 = clim
+         clim:list = None, mode:str = None, 
+         tlim:list = None,
+         average:int = None, cmap=None, projection = None, 
+         lonlim = None, latlim = None, 
+         terminator:bool = False, terminator_altkm:float = 350):
+
     fnhdf = os.path.expanduser(fnhdf.strip())
     assert fnhdf is not None 
     assert os.path.splitext(fnhdf)[1] in ['.h5', '.hdf5']
@@ -79,6 +82,9 @@ def plot(fnhdf:str = None,
         mlat_levels = None
         mlon_levels = None
     
+    if tlim is not None:
+        t1 = parser.parse(tlim[0])
+        t2 = parser.parse(tlim[1])
     
     if mode is None:
         mode = 'lin'
@@ -114,9 +120,17 @@ def plot(fnhdf:str = None,
         iterate = np.arange(0, D['time'].size, average)
         for i in iterate: #range(D['time'].shape[0]):
             t0 = D['time'][i]
-            z = np.log10(np.nanmean(D['tecim'][i:i+average], axis=0)) if mode == 'log' else np.nanmean(D['tecim'][i:i+average], axis=0)
+            if i < average:
+                z = np.log10(np.nanmean(D['tecim'][:i+1], axis=0)) if mode == 'log' else np.nanmean(D['tecim'][:i+1], axis=0)
+            elif i < D['time'].size:
+                z = np.log10(np.nanmean(D['tecim'][i-average+1 : i+1], axis=0)) if mode == 'log' else np.nanmean(D['tecim'][i-average+1 : i+1], axis=0)
+            else:
+                z = np.log10(np.nanmean(D['tecim'][i-average+1:], axis=0)) if mode == 'log' else np.nanmean(D['tecim'][i-average+1:], axis=0)
+            if tlim is not None:
+                if (t0 <= t1) or (t0 >= t2):
+                    continue
             fig, ax = gm.plotCartoMap(latlim=latlim, lonlim=lonlim, 
-                                  projection='merc', #lon0 = -90,#glons[idmidnight],
+                                  projection=projection, #lon0 = -90,#glons[idmidnight],
                                   title = t0, 
                                   #lat0 = 40,
                                   meridians=None, parallels=None, figsize=figsize,
@@ -126,7 +140,8 @@ def plot(fnhdf:str = None,
                                   mlon_levels=mlon_levels,
                                   date=t0, 
                                   mlon_colors='w', mlat_colors='w',mlon_cs='mlt',
-                                  terminator=True, ter_color='r', terminator_altkm=350
+                                  terminator=terminator, ter_color='r', 
+                                  terminator_altkm=terminator_altkm
                                   )
             
             print ("Plotting {}".format(D['time'][i]))
@@ -148,7 +163,7 @@ def plot(fnhdf:str = None,
                     subprocess.call('mkdir -p {}'.format(figdir), shell=True, timeout=5)
                 else:
                     subprocess.call('mkdir "{}"'.format(figdir), shell=True, timeout=5)
-            fn = D['time'][i].strftime('%m%d_%H%M')
+            fn = t0.strftime('%m%d_%H%M')
             figname = fn + str('.png')
             plt.savefig(os.path.join(figdir, figname), dpi=dpi)
             plt.close(fig=fig)
@@ -161,6 +176,7 @@ if __name__ == '__main__':
     p.add_argument('-c', '--cfg', type = str, help='path to donfig.yaml file for map configuration. Default = ~/map/conus.yaml')
     p.add_argument('-o', '--odir', help = 'Destination folder, if None-> the same as input folder', default = None)
     p.add_argument('--clim', nargs=2, default=None)
+    p.add_argument('--tlim', nargs=2, default=None)
     p.add_argument('--projection', default=None, type=str)
     p.add_argument('--lonlim', nargs=2, type=float)
     p.add_argument('--latlim', nargs=2, type=float)
@@ -168,9 +184,11 @@ if __name__ == '__main__':
     p.add_argument('--average', type=int, default=1)
     p.add_argument('--cmap', type=str, default='jet')
     p.add_argument('--terminator', action='store_true')
+    p.add_argument('--terminator_altkm', type=int, default=350)
     
     P = p.parse_args()
 
-    plot(fnhdf = P.fn, cfg = P.cfg, odir = P.odir, mode=P.mode,
+    plot(fnhdf = P.fn, cfg = P.cfg, odir = P.odir, mode=P.mode, tlim=P.tlim,
          clim=P.clim, cmap=P.cmap, projection=P.projection, average=P.average,
-         lonlim=P.lonlim, latlim=P.latlim, terminator=P.terminator)
+         lonlim=P.lonlim, latlim=P.latlim, terminator=P.terminator,
+         terminator_altkm=P.terminator_altkm)

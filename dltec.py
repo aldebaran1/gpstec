@@ -9,13 +9,15 @@ import os
 import numpy as np
 import madrigalWeb.madrigalWeb
 import subprocess
+import platform
 from dateutil import parser
 
 def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
              user_fullname:str = None,
              user_email:str = None,
              user_affiliation:str = None,
-             fixpath:bool = False):
+             fixpath:bool = False,
+             los: bool = False):
     
     assert t0 is not None
     assert t1 is not None
@@ -27,7 +29,7 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
         user_email = 'smrak@bu.edu'
     if user_affiliation is None: 
         user_affiliation = 'BU'
-        
+    key = 'los' if los else 'gps'
     # Open Madrigal database
     madrigalUrl = 'http://cedar.openmadrigal.org/'
     MD = madrigalWeb.madrigalWeb.MadrigalData(madrigalUrl)
@@ -70,7 +72,7 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
                 path = os.path.expanduser(this_file.name)
                 parts = path.split(os.sep)
                 path_fn = os.path.split(path)[1]
-                if path_fn[:3] == 'gps':
+                if path_fn[:3] == key:
                     if not fixpath:
                         p = savedir + '/'.join(parts[4:])
                         savefn = os.path.join(p)
@@ -84,7 +86,12 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
     for ofn in savefnlist:
         head = os.path.split(ofn)[0]
         if not os.path.exists(head):
-            subprocess.call("mkdir -p {}".format(head), timeout=10, shell=True)
+            if platform.system() == 'Linux':
+                subprocess.call("mkdir -p {}".format(head), timeout=10, shell=True)
+            elif platform.system() == 'Windows':
+                subprocess.call('mkdir "{}"'.format(head), timeout=10, shell=True)
+            else:
+                subprocess.call("mkdir -p {}".format(head), timeout=10, shell=True)
     
     for i in range(len(savefnlist)):
         if not os.path.exists(savefnlist[i]):
@@ -102,6 +109,7 @@ if __name__ == '__main__':
     p.add_argument('t1', type=str, help='Time limit 2 YYYY-mm-dd')
     p.add_argument('odir', type=str, help='Output directory root')
     p.add_argument('--fixpath', help='Save to exact directory', action='store_true')
+    p.add_argument('--los', help='Get line-of-sight data', action='store_true')
     p.add_argument('--name', type=str, help='"Full name"')
     p.add_argument('--email', type=str, help='"email"')
     p.add_argument('--affiliation', type=str, help='"affiliation"')
@@ -109,7 +117,7 @@ if __name__ == '__main__':
     P = p.parse_args()
     
     dlGPSTEC(t0 = P.t0, t1 = P.t1, savedir = P.odir, 
-             user_fullname = P.name,
+             user_fullname = P.name, los = P.los,
              user_email = P.email,
              user_affiliation = P.affiliation,
              fixpath = P.fixpath)

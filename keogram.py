@@ -14,7 +14,7 @@ from dateutil import parser
 import h5py, os
 import numpy as np
 
-d = '2015-4-17'
+d = '2017-9-8'
 
 folder = 'G:\\My Drive\\scintillation_data\\tid\\{}\\'.format(parser.parse(d).strftime("%Y%m%d"))
 
@@ -40,7 +40,7 @@ tlim = [parser.parse(d), parser.parse(d)+timedelta(hours=10)]
 Xt = -80
 Yt=[10, 60]
 
-dtec_clim = [-0.02, 0.02]
+dtec_clim = [-0.1, 0.1]
 
 TEC = gpstec.readFromHDF(fn)
 xgrid = TEC['xgrid']
@@ -117,8 +117,8 @@ SCINT = h5py.File(fnscint, 'r')
 scint_time = np.array([datetime.utcfromtimestamp(t) for t in SCINT['data/time'][:]])
 tgrid = D['time'][1:]
 ygrid = D['Y']
-st_keo = np.copy((D['keo'].shape[0] - 1, D['keo'].shape[1]))
-snr_keo = np.copy((D['keo'].shape[0] -1, D['keo'].shape[1]))
+st_keo = np.nan * np.empty((D['keo'].shape[0] - 1, D['keo'].shape[1]))
+snr_keo = np.nan * np.empty((D['keo'].shape[0] -1, D['keo'].shape[1]))
 for it, t in enumerate(tgrid):
     idt = abs(scint_time - t).argmin()
     glon = SCINT['data/ipp'][idt-300 : idt+1, :, :, 1]

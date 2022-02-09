@@ -6,17 +6,20 @@ Created on Thu Mar 29 18:20:38 2018
 @author: Sebastijan Mrak <smrak@bu.edu>
 """
 
-import h5py
+import h5py, os
 from numpy import where, isin, nan, arange, ones, isnan, isfinite, ndarray
 from numpy import array, mean, unique, hstack, vstack, ma, meshgrid, linspace
 from datetime import datetime 
-from pyGnss import gnssUtils as gu
-import os
 from typing import Union
 from scipy import interpolate
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-from cartomap import geogmap as gm
+
+def datetime2posix(dtime):
+    """
+    Convert an input list of datetime format timestamp to posix timestamp
+    """
+    return [i.replace(tzinfo=datetime.timezone.utc).timestamp() for i in dtime]
 
 def getNeighbours(image,i,j):
     """
@@ -83,7 +86,7 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
     if timelim is None or len(timelim) == 0:
         iterate = obstimes
     elif len(timelim) > 0 and isinstance(timelim[0],datetime):
-        tlim = gu.datetime2posix(timelim)
+        tlim = datetime2posix(timelim)
         IDT = (obstimes>=tlim[0]) & (obstimes<=tlim[1])
         iterate = unique(obstimes[IDT])
     else:
@@ -154,7 +157,7 @@ def merge_time(input_fn_list=[]):
 
 def save2HDF(t,lon,lat,images,h5fn):
     if isinstance(t[0],datetime):
-        t = gu.datetime2posix(t)
+        t = datetime2posix(t)
     try:
         f = h5py.File(h5fn,'w')
         d = f.create_group('GPSTEC')
@@ -181,6 +184,10 @@ def plotTECmap(x,y,z,title='',cmap='viridis',clim=[0,15],
                colorbar=True,cbar_label='TEC [TECu]',
                tight=False, savefn=False,DPI=100,
                nightshade=False, ns_dt=None, ns_alpha=0.1):
+    try:
+        from cartomap import geogmap as gm
+    except:
+        raise ('Cartomap is not installed')
     # Make map
     fig = gm.plotCartoMap(figsize=figsize,projection=projection,latlim=latlim,lonlim=lonlim,
                       parallels=parallels,meridians=meridians,title=title,
@@ -214,9 +221,13 @@ def interpolateTEC(im: Union[list, ndarray] = None,
     assert im is not None, 'Invalid input argument. Has to be a list or np.ndarray with a length of at least 1'
     if x0 is None or y0 is None:
         x0, y0 = meshgrid(arange(im.shape[0]), arange(im.shape[1]))
+    if len(x0.shape) != 2 and len(y0.shape) != 2:
+        x0, y0 = meshgrid(x0, y0)
+    print (x0.shape, y0.shape)
     x0 = x0.T
     y0 = y0.T
     mask = ma.masked_invalid(im)
+    print (mask.shape)
     x0 = x0[~mask.mask]
     y0 = y0[~mask.mask]
     X = im[~mask.mask]
