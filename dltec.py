@@ -82,7 +82,6 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
                 path_fn = os.path.split(path)[1]
                 if path_fn[:3] == key:
                     if not fixpath:
-                        print (parts)
                         p = savedir + os.sep.join(parts[4:])
                         savefn = os.path.join(p)
                         savefnlist.append(savefn)
@@ -93,7 +92,6 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
     
     # Check for direcotories:
     for ofn in savefnlist:
-        print (ofn)
         head = os.path.split(ofn)[0]
         if not os.path.exists(head):
             if platform.system() in ('Linux', 'Darwin'):
