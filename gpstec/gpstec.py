@@ -9,7 +9,7 @@ Created on Thu Mar 29 18:20:38 2018
 import h5py, os
 from numpy import where, isin, nan, arange, ones, isnan, isfinite, ndarray
 from numpy import array, mean, unique, hstack, vstack, ma, meshgrid, linspace
-from datetime import datetime 
+from datetime import datetime, timezone
 from typing import Union
 from scipy import interpolate
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ def datetime2posix(dtime):
     """
     Convert an input list of datetime format timestamp to posix timestamp
     """
-    return [i.replace(tzinfo=datetime.timezone.utc).timestamp() for i in dtime]
+    return [i.replace(tzinfo=timezone.utc).timestamp() for i in dtime]
 
 def getNeighbours(image,i,j):
     """
@@ -73,17 +73,19 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
             fn = datafolder
         else:
             raise('Something went wrong. datafolder format is not recognized')
-            
+        
         f = h5py.File(fn, 'r')
         obstimes = f['Data/Table Layout']['ut2_unix']
         xgrid = arange(-180,180)
         ygrid = arange(-90,90)
     except Exception as e:
         raise (e)
-    
+        
     # Time resolution
+    print (timelim)
     if timelim is None or len(timelim) == 0:
         iterate = obstimes
+        print (iterate)
     elif len(timelim) > 0 and isinstance(timelim[0],datetime):
         tlim = datetime2posix(timelim)
         IDT = (obstimes>=tlim[0]) & (obstimes<=tlim[1])
