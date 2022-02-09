@@ -82,10 +82,8 @@ def returnGlobalTEC(date='', datafolder='', timelim=[]):
         raise (e)
         
     # Time resolution
-    print (timelim)
     if timelim is None or len(timelim) == 0:
         iterate = obstimes
-        print (iterate)
     elif len(timelim) > 0 and isinstance(timelim[0],datetime):
         tlim = datetime2posix(timelim)
         IDT = (obstimes>=tlim[0]) & (obstimes<=tlim[1])
