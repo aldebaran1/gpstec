@@ -13,7 +13,7 @@ setup(name='gpstec',
       description='Utility functions for madrigal GPS TEC maps',
       author='Sebastijan Mrak',
       url='https://github.com/aldebaran1/gpstec.git',
-      install_requires=['cartopy'],
+      install_requires=['madrigalWeb'],
       packages=['gpstec']
 
 )

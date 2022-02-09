@@ -12,8 +12,11 @@ import os, platform
 import yaml
 import subprocess
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-from cartomap import geogmap as gm
+try:
+    import cartopy.crs as ccrs
+    from cartomap import geogmap as gm
+except:
+    print ('No plotting librarries')
 from argparse import ArgumentParser
 from dateutil import parser
 #mcfg = '/home/smrak/Documents/cartomap/map/conus.yaml'
