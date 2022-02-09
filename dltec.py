@@ -5,31 +5,37 @@ Created on Mon Mar 18 14:28:47 2019
 
 @author: smrak
 """
-import os
+import os, platform, subprocess, yaml, datetime
 import numpy as np
 import madrigalWeb.madrigalWeb
-import subprocess
-import platform
 from dateutil import parser
 
 def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
-             user_fullname:str = None,
-             user_email:str = None,
-             user_affiliation:str = None,
              fixpath:bool = False,
              los: bool = False):
     
     assert t0 is not None
     assert t1 is not None
     assert savedir is not None
+    cfg = os.getcwd() + '.affil.yaml'
+    if not os.path.exists(cfg):
+        dct = {}
+        tmp = input('We need some info for the MardigalWeb interface.\nType you full name: ')
+        dct['username'] = tmp
+        tmp = input('Type your email: ')
+        dct['email'] = tmp
+        tmp = input('Type your affiliation: ')
+        dct['affiliation'] = tmp
+        with open(cfg, 'w') as outfile:
+            yaml.dump(dct, outfile)
+        del dct, tmp
+    stream = yaml.load(open(cfg, 'r'), Loader=yaml.BaseLoader)
+    user_fullname = stream.get('username')
+    user_email = stream.get('email')
+    user_affiliation = stream.get('affiliation')
     
-    if user_fullname is None: 
-        user_fullname = 'Sebastijan Mrak'
-    if user_email is None: 
-        user_email = 'smrak@bu.edu'
-    if user_affiliation is None: 
-        user_affiliation = 'BU'
     key = 'los' if los else 'gps'
+    
     # Open Madrigal database
     madrigalUrl = 'http://cedar.openmadrigal.org/'
     MD = madrigalWeb.madrigalWeb.MadrigalData(madrigalUrl)
@@ -70,11 +76,14 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
         for this_file in subarr:
             if this_file.category == 1:
                 path = os.path.expanduser(this_file.name)
-                parts = path.split(os.sep)
+                parts = path.split('/')
+                parts.remove('gps')
+                parts[-2] = datetime.datetime.strptime(parts[-2], '%d%b%y').strftime('%m%d')
                 path_fn = os.path.split(path)[1]
                 if path_fn[:3] == key:
                     if not fixpath:
-                        p = savedir + '/'.join(parts[4:])
+                        print (parts)
+                        p = savedir + os.sep.join(parts[4:])
                         savefn = os.path.join(p)
                         savefnlist.append(savefn)
                     else:
@@ -84,14 +93,13 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
     
     # Check for direcotories:
     for ofn in savefnlist:
+        print (ofn)
         head = os.path.split(ofn)[0]
         if not os.path.exists(head):
-            if platform.system() == 'Linux':
+            if platform.system() in ('Linux', 'Darwin'):
                 subprocess.call("mkdir -p {}".format(head), timeout=10, shell=True)
             elif platform.system() == 'Windows':
                 subprocess.call('mkdir "{}"'.format(head), timeout=10, shell=True)
-            else:
-                subprocess.call("mkdir -p {}".format(head), timeout=10, shell=True)
     
     for i in range(len(savefnlist)):
         if not os.path.exists(savefnlist[i]):
@@ -110,15 +118,8 @@ if __name__ == '__main__':
     p.add_argument('odir', type=str, help='Output directory root')
     p.add_argument('--fixpath', help='Save to exact directory', action='store_true')
     p.add_argument('--los', help='Get line-of-sight data', action='store_true')
-    p.add_argument('--name', type=str, help='"Full name"')
-    p.add_argument('--email', type=str, help='"email"')
-    p.add_argument('--affiliation', type=str, help='"affiliation"')
     
     P = p.parse_args()
     
     dlGPSTEC(t0 = P.t0, t1 = P.t1, savedir = P.odir, 
-             user_fullname = P.name, los = P.los,
-             user_email = P.email,
-             user_affiliation = P.affiliation,
-             fixpath = P.fixpath)
-    
+             los = P.los, fixpath=P.fixpath)
