@@ -23,7 +23,7 @@ def main(start: str = None, stop : str = None, los : bool = False):#
         t += timedelta(days=1)
         
     for d in dtlist:
-        line = f'./auto.sh {d} {d} 1' if los else f'./auto.sh {d} {d}'
+        line = f'./auto.sh {d} {d} --los' if los else f'./auto.sh {d} {d}'
         t0 = datetime.now()
         subprocess.call(line, shell = True, timeout=timeout)
         print (f'It took {datetime.now()-t0} to download.')
