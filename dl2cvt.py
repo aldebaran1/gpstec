@@ -38,4 +38,4 @@ if __name__ == '__main__':
     
     P = p.parse_args()
     
-    main(start = P.startdate, end = P.enddate, los = P.los)
+    main(start = P.startdate, stop = P.enddate, los = P.los)
