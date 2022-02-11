@@ -11,12 +11,13 @@ import madrigalWeb.madrigalWeb
 from dateutil import parser
 
 def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
-             fixpath:bool = False,
-             los: bool = False):
-    
+             fixpath:bool = False, los:bool= False):
     assert t0 is not None
     assert t1 is not None
     assert savedir is not None
+    
+    key = 'los' if los else 'gps'
+    
     cfg = os.getcwd() + '.affil.yaml'
     if not os.path.exists(cfg):
         dct = {}
@@ -34,7 +35,6 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
     user_email = stream.get('email')
     user_affiliation = stream.get('affiliation')
     
-    key = 'los' if los else 'gps'
     
     # Open Madrigal database
     madrigalUrl = 'http://cedar.openmadrigal.org/'
@@ -89,7 +89,6 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
                         savefn = savedir + os.path.split(path)[1]
                         savefnlist.append(savefn)
                     fnlist.append(this_file.name)
-    
     # Check for direcotories:
     for ofn in savefnlist:
         head = os.path.split(ofn)[0]
@@ -114,10 +113,10 @@ if __name__ == '__main__':
     p.add_argument('t0', type=str, help='Time limit 1 YYYY-mm-dd')
     p.add_argument('t1', type=str, help='Time limit 2 YYYY-mm-dd')
     p.add_argument('odir', type=str, help='Output directory root')
+    p.add_argument('--los', help='Download los data', action='store_true')
     p.add_argument('--fixpath', help='Save to exact directory', action='store_true')
-    p.add_argument('--los', help='Get line-of-sight data', action='store_true')
+    
     
     P = p.parse_args()
-    
     dlGPSTEC(t0 = P.t0, t1 = P.t1, savedir = P.odir, 
              los = P.los, fixpath=P.fixpath)
