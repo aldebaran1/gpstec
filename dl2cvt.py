@@ -33,7 +33,7 @@ if __name__ == '__main__':
     p = ArgumentParser()
     
     p.add_argument('startdate', type = str)
-    p.add_argument('endtdate', type = str)
+    p.add_argument('enddate', type = str)
     p.add_argument('--los', type = str)
     
     P = p.parse_args()
