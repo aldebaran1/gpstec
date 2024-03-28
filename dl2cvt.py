@@ -10,7 +10,7 @@ from dateutil import parser
 from argparse import ArgumentParser
 import subprocess
 
-def main(start: str = None, stop : str = None, los : bool = False):#
+def main(start: str = None, stop : str = None, odir: str = None,  los : bool = False):
     
     timeout = 900 if los else 180
     
@@ -23,8 +23,9 @@ def main(start: str = None, stop : str = None, los : bool = False):#
         t += timedelta(days=1)
         
     for d in dtlist:
-        line = f'./auto.sh {d} {d} --los' if los else f'./auto.sh {d} {d}'
+        line = f'./auto.sh {d} {odir} --los' if los else f'./auto.sh {d} {odir}'
         t0 = datetime.now()
+        print (line)
         subprocess.call(line, shell = True, timeout=timeout)
         print (f'It took {datetime.now()-t0} to download.')
         
@@ -34,8 +35,9 @@ if __name__ == '__main__':
     
     p.add_argument('startdate', type = str)
     p.add_argument('enddate', type = str)
+    p.add_argument('odir', type=str)
     p.add_argument('--los', type = str)
     
     P = p.parse_args()
     
-    main(start = P.startdate, stop = P.enddate, los = P.los)
+    main(start = P.startdate, stop = P.enddate, odir=P.odir, los = P.los)

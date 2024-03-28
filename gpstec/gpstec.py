@@ -123,9 +123,9 @@ def readFromHDF(h5fn, tformat='datetime'):
         t = f['GPSTEC/time'][:]
         if str(tformat) == 'datetime':
             t = array([datetime.utcfromtimestamp(ts) for ts in t])
-        lon = f['GPSTEC/lon'].value
-        lat = f['GPSTEC/lat'].value
-        images = f['GPSTEC/im'].value
+        lon = f['GPSTEC/lon'][:]
+        lat = f['GPSTEC/lat'][:]
+        images = f['GPSTEC/im'][:]
         # Close file
         f.close()
         
