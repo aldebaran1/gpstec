@@ -143,8 +143,9 @@ def main(f, el_mask, altkm, out):
         out = os.path.split(f)[0] + os.sep
     D = h5py.File(f, 'r')
     M = np.array([a[0].decode('ascii') for a in D['Metadata/Data Parameters'][:]])
-    
-    iter = np.arange(0, D['Data/Table Layout'].size, 10000e3, dtype=int)
+    S = D['Data/Table Layout'].size
+    iter = np.arange(0, S, 10000e3, dtype=int)
+    iter = np.append(iter, S-1)
     ut1 = np.zeros(D['Data/Table Layout'].size, dtype=int)
     for ii, i in enumerate(iter[1:]):
         ut1[iter[ii]:i] = np.asarray(pd.DataFrame(D['Data/Table Layout'][iter[ii]:i])['ut1_unix'])
