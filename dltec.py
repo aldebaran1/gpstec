@@ -9,6 +9,8 @@ import os, platform, subprocess, yaml, datetime
 import numpy as np
 import madrigalWeb.madrigalWeb
 from dateutil import parser
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
              fixpath:bool = False, los:bool= False):
@@ -82,7 +84,7 @@ def dlGPSTEC(t0:str = None, t1:str = None, savedir:str = None,
                 path_fn = os.path.split(path)[1]
                 if path_fn[:3] == key:
                     if not fixpath:
-                        p = savedir + os.sep.join(parts[4:])
+                        p = savedir + os.sep.join(parts[-3:])
                         savefn = os.path.join(p)
                         savefnlist.append(savefn)
                     else:
