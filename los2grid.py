@@ -138,7 +138,14 @@ def ImageNew(glon, glat, tid,
     del im
     return xgrid, ygrid, imout
 
-def main(f, el_mask, altkm, out):
+def main(f, el_mask, altkm, out, force=0):
+    if os.path.isdir(f):
+        f1 = glob.glob(f+'/los_*h5')
+        if len(f1) > 0:
+            f = f1[0]
+        else:
+            print (f"No supported files in {f}")
+            return
     if out is None:
         out = os.path.split(f)[0] + os.sep
     D = h5py.File(f, 'r')
@@ -152,9 +159,12 @@ def main(f, el_mask, altkm, out):
     
     utu = np.unique(np.delete(ut1, ut1==0))
     dt = np.array([datetime.utcfromtimestamp(t) for t in utu])
-    
+    outf = out+f'{os.sep}conv_from_los_{dt[0].strftime("%Y%m%d")}_{altkm}km_{el_mask}el.nc'
+    if os.path.exists(outf) and not force:
+        print (f'{outf} already exists!')
+        return
     for i, ut in enumerate(utu):
-        print (dt[i])
+        #print (dt[i])
         idt = np.isin(ut1, ut)
         az, el = np.array(pd.DataFrame(D['Data/Table Layout'][idt])['azm']), np.array(pd.DataFrame(D['Data/Table Layout'][idt])['elm']) 
         if el_mask is not None:
@@ -186,10 +196,11 @@ if __name__ == '__main__':
     p.add_argument('--odir', help='output dirrectory', default=None)
     p.add_argument('--elmask', default=30, type=float)
     p.add_argument('--altkm',  default=350, type=float)
+    p.add_argument('--force', action='store_true')
     P = p.parse_args()
     
     
-    main(P.ifn, el_mask=P.elmask, out=P.odir, altkm=P.altkm)
+    main(P.ifn, el_mask=P.elmask, out=P.odir, altkm=P.altkm, force=P.force)
     
     
     

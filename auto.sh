@@ -14,8 +14,9 @@ dBy_l="${dBy,,}"
 d1=$(date -d $D +'%m%dT%H%M')
 d2=$(date -d $D +'%m%dT%H%M' -d "$D + 1 day")
 
-ODIR2=$ODIR$year'$dBy_l'/
-
+ODIR2=$ODIR"/"$year"/"$dBy_l"/"
+echo 'Downloading file'
 python dltec.py $D $D $ODIR $FLAG
 sleep 1
+echo 'Converting file'
 python convert.py $ODIR2
